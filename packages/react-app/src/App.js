@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { Button, message } from "antd";
+import "antd/dist/antd.css";
 import { StaticJsonRpcProvider, Web3Provider } from "@ethersproject/providers";
 import Web3Modal from "web3modal";
 import { useUserProvider, useExchangePrice } from "./hooks";
@@ -83,13 +84,13 @@ function App() {
          />
       </div>
       <div >
-        <Button type="primary" loading={loading} style={{marginTop:32}} type="primary" onClick={async ()=>{
+        <Button loading={loading} size="large" shape="round" style={{marginTop:32}} type="primary" onClick={async ()=>{
           setLoading(true)
           try{
             const msgToSign = await axios.get(serverUrl)
             console.log("msgToSign",msgToSign)
             if(msgToSign.data && msgToSign.data.length > 32){//<--- traffic escape hatch?
-              let currentLoader = setTimeout(()=>{setLoading(false)},5000)
+              let currentLoader = setTimeout(()=>{setLoading(false)},4000)
               let message = msgToSign.data.replace("**ADDRESS**",address)
               let sig = await userProvider.send("personal_sign", [ message, address ]);
               clearTimeout(currentLoader)
@@ -103,8 +104,11 @@ function App() {
               clearTimeout(currentLoader)
               setLoading(false)
               console.log("RESULT:",res)
-              if(res.data){
-                setResult(res.data)
+              if(res.data && res.data != "You must have at least one token to sign this message!"){
+                setResult("hidden file contents: ",res.data)
+              }
+              else{
+                setResult("Request denied. Do you meet the requirments?")
               }
             }else{
               setLoading(false)
@@ -115,10 +119,12 @@ function App() {
             console.log("FAILED TO GET...")
           }
         }}>
-          Sign in with Ethereum mainnet
+          Access Secret Message
         </Button>
       </div>
-      
+      <div  style={{fontSize:"18px", textAlign: "center", padding: 10 }}>
+        {result}
+      </div>
     </div>
   );
 }
