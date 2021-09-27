@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "install": "cd packages/react-app && yarn install",
     "start": "cd packages/react-app && yarn start",
     "backend": "cd packages/backend && node index.js"
   },
