@@ -95,7 +95,7 @@ function App() {
               let sig = await userProvider.send("personal_sign", [ message, address ]);
               clearTimeout(currentLoader)
               currentLoader = setTimeout(()=>{setLoading(false)},4000)
-              console.log("sig",sig)
+              console.log("signature: ",sig)
               const res = await axios.post(serverUrl, {
                 address: address,
                 message: message,
@@ -103,9 +103,9 @@ function App() {
               })
               clearTimeout(currentLoader)
               setLoading(false)
-              console.log("RESULT:",res)
+              console.log("RESULT:",res.data)
               if(res.data && res.data != "You must have at least one token to sign this message!"){
-                setResult("hidden file contents: ",res.data)
+                setResult(res.data)
               }
               else{
                 setResult("Request denied. Do you meet the requirments?")
