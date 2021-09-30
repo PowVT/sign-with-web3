@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 const INFURA_ID = "0998bcf49e0640fd9f31fb01262f8433";
 
-let currentMessageForUseToSign = "**ADDRESS** would like to enter your token protected app, pleaseee!";
+let currentMessageForUseToSign = "**ADDRESS** would like to partake in the poll!";
 
 const CONTRACT_ADDRESS = "0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F"; // Gitcoin (GTC) contract
 
@@ -21,14 +21,30 @@ const CONTRACT_ABI = [{"inputs":[{"internalType":"address","name":"account","typ
 
 const HIDDEN_CONTENT = fs.readFileSync("./hiddenContent.txt").toString(); //ignored by git so it doesn't enter the repo publicly
 
+let horseVotes = 0;
+let cowVotes = 0;
+
+let voters = [];
+
 console.log("HIDDEN_CONTENT",HIDDEN_CONTENT);
+
+function hasUserVoted(userAddress) {
+    let result = false;
+    for(let i=0; i < voters.length; i++) {
+        if(voters[i] == userAddress) {
+            result = true
+        }
+    }
+    return result
+}
 
 app.get("/", function(req, res) {
     console.log("/")
     res.status(200).send(currentMessageForUseToSign);
 });
 
-app.post('/', async function(request, response){
+// Sign in
+app.post('/sign-in', async function(request, response){
     const ip = request.headers['x-forwarded-for'] || request.connection.remoteAddress;
     console.log("POST from IP address: ", ip, request.body.message);
     // Verify message not manipulated.
@@ -50,11 +66,43 @@ app.post('/', async function(request, response){
                 response.send(HIDDEN_CONTENT);
             }
             else{
-                response.send("You must have at least one token to sign this message!")
+                response.send("You must have at least one GTC to participate.")
             }
         }
     }
 });
+
+// Voting routes.
+app.post('/cow-vote', function (request, response){
+    const ip = request.headers['x-forwarded-for'] || request.connection.remoteAddress;
+    console.log("POST from address: ", ip, request.body.address);
+    const voted = hasUserVoted(request.body.address);
+    if(voted == false) {
+        voters.push(request.body.address);
+        cowVotes++;
+        console.log("Cow Votes",cowVotes)
+        response.send([horseVotes,cowVotes]);
+    }
+    else{
+        response.send([horseVotes,cowVotes]);
+    }
+    
+})
+
+app.post('/horse-vote', function (request, response){
+    const ip = request.headers['x-forwarded-for'] || request.connection.remoteAddress;
+    console.log("POST from address: ", ip, request.body.address);
+    const voted = hasUserVoted(request.body.address);
+    if(voted == false) {
+        voters.push(request.body.address);
+        horseVotes++;
+        console.log("Horse Votes",horseVotes)
+        response.send([horseVotes,cowVotes]);
+    }    
+    else {
+        response.send([horseVotes,cowVotes]);
+    }
+})
 
 var server = app.listen(49832, function () {
     console.log("HTTP Listening on port:", server.address().port);
