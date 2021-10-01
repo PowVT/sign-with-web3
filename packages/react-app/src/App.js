@@ -1,10 +1,10 @@
 import React, { useCallback, useState } from "react";
-import { Button, message, Space, Card, Row, Col } from "antd";
+import { Button, message, Card, Row, Col, Modal, List, Descriptions } from "antd";
 import "antd/dist/antd.css";
 import { StaticJsonRpcProvider, Web3Provider } from "@ethersproject/providers";
 import Web3Modal from "web3modal";
 import { useUserProvider, useExchangePrice } from "./hooks";
-import { Account } from "./components";
+import { Account, Address } from "./components";
 import { useUserAddress } from "eth-hooks";
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { INFURA_ID, NETWORKS } from "./constants";
@@ -66,10 +66,25 @@ function App() {
   const [ result, setResult ] = useState()
   const [ voteResult, setVoteResult ] = useState()
 
+  const [showPoll, setShowPoll] = useState("none")
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleOk = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
+
   return (
     <div className="App">
-       {/* 👨‍💼 Your account is in the top right with a wallet at connect options */}
-       <div style={{textAlign: "center", padding: 10 }}>
+       <Row justify="center">
+       <div style={{textAlign:"center", padding: 10 }}>
          <Account
            connectText={"Connect Ethereum Wallet"}
            onlyShowButton={!isSigner}
@@ -84,72 +99,80 @@ function App() {
            blockExplorer={blockExplorer}
          />
       </div>
-      <div >
-        
-      </div>
+      </Row >
       <Row justify="center" style={{margin:"24px"}}>
-        <Col Span={6}>
+        <Col Span={12}>
+          
           <Card >
             <div >
               <Button loading={loading} size="large" shape="round" type="primary" onClick={async ()=>{
-            setLoading(true) 
-            try{
-              const msgToSign = await axios.get(serverUrl);
-              if(msgToSign.data && msgToSign.data.length > 32) {   //<--- traffic escape hatch?
-                let currentLoader = setTimeout(()=>{setLoading(false)},4000);
-                let message = msgToSign.data.replace("**ADDRESS**",address);
-                let sig = await userProvider.send("personal_sign", [ message, address ]);
-                clearTimeout(currentLoader);
-                currentLoader = setTimeout(()=>{setLoading(false)},4000);
-                console.log("signature: ",sig);
-                const res = await axios.post(serverUrl+"sign-in", {
-                  address: address,
-                  message: message,
-                  signature: sig,
-                });
-                clearTimeout(currentLoader);
-                setLoading(false);
-                console.log("RESULT:",res.data);
-                if(res.data == "You must have at least one GTC to participate."){
-                  setResult(res.data);
+                setLoading(true) 
+                try{
+                  const msgToSign = await axios.get(serverUrl);
+                  if(msgToSign.data && msgToSign.data.length > 32) {   //<--- traffic escape hatch?
+                    let currentLoader = setTimeout(()=>{setLoading(false)},4000);
+                    let message = msgToSign.data.replace("**ADDRESS**",address);
+                    let sig = await userProvider.send("personal_sign", [ message, address ]);
+                    clearTimeout(currentLoader);
+                    currentLoader = setTimeout(()=>{setLoading(false)},4000);
+                    console.log("signature: ",sig);
+                    const res = await axios.post(serverUrl+"sign-in", {
+                      address: address,
+                      message: message,
+                      signature: sig,
+                    });
+                    clearTimeout(currentLoader);
+                    setLoading(false);
+                    console.log("RESULT:",res.data);
+                    if(res.data != "You must have at least one GTC to participate."){
+                      setResult(res.data);
+                      setShowPoll("block")
+                    }
+                    else{
+                      setResult("Request denied. You must have at least one GTC to participate.");
+                    }
+                  }else{
+                    setLoading(false);
+                    setResult("😅 Sorry, the server is overloaded. Please try again later. ⏳");
+                  }
+                }catch(e){
+                  message.error(' Sorry, the server is overloaded. 🧯🚒🔥');
+                  console.log("FAILED TO GET...");
                 }
-                else{
-                  setResult("Request denied.");
-                }
-              }else{
-                setLoading(false);
-                setResult("😅 Sorry, the server is overloaded. Please try again later. ⏳");
-              }
-            }catch(e){
-              message.error(' Sorry, the server is overloaded. 🧯🚒🔥');
-              console.log("FAILED TO GET...");
-            }
-          }}>
-            Access Poll
-          </Button>
-        </div >
-            <div style={{fontSize:"24px", textAlign: "center", padding: 10 }}>
+              }}>
+                Access Poll
+              </Button>
+            </div >
+
+            <div style={{fontSize:"24px", padding: 60 }}>
               {result}
             </div>
-            <div style={{fontSize:"24px", textAlign: "center", padding: 10 }}>
+            <div style={{display:showPoll}}>
+            <Button size="large" shape="round" onClick={showModal}>
+              Open Poll
+            </Button>
+            <Modal title="Vote" visible={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
               { result && 
-              result!="You must have at least one GTC to participate." && 
-              result!="Request denied." &&
+              result!="Request denied. You must have at least one GTC to participate." &&
               result!="😅 Sorry, the server is overloaded. Please try again later. ⏳" ? (
-                <div >
-                  <Button 
-                    size="large"
-                    style={{fontSize:"20px"}}
-                    onClick={async () =>{
-                      const res = await axios.post(serverUrl+"cow-vote", {
-                        address: address,
-                      })
-                      setVoteResult(res.data)
-                    }}
+                <div style={{fontSize:"24px", width:"250px"}}>
+                  <Descriptions title="Vote: " bordered>
+                    <Descriptions.Item >
+                    <Button 
+                      size="large"
+                      style={{fontSize:"20px"}}
+                      onClick={async () =>{
+                        const res = await axios.post(serverUrl+"cow-vote", {
+                          address: address,
+                        })
+                        setVoteResult(res.data)
+                      }}
                     >
-                      🐄
+                    🐄
                     </Button>
-                    <Space/>
+                    </Descriptions.Item>
+                    
+                    <Descriptions.Item >
                     <Button 
                     size="large"
                     style={{fontSize:"20px"}}
@@ -162,23 +185,57 @@ function App() {
                     }}
                     >
                     🐎
-                  </Button>
-                  </div>
+                    </Button>
+                    </Descriptions.Item>
+                  </Descriptions>
+                </div>
               ) : ("")}
+            </Modal>
             </div>
-            {voteResult ?
-            <div >
-              <div style={{fontSize:"18px"}}> 
-              Horse Votes: {voteResult[0]}
+
+            <div style={{fontSize:"20px", padding: 20 }}>
+              {voteResult ?
+              <div > 
+                Results:
+                <div style={{fontSize:"18px"}}> 
+                Horse Votes: {voteResult[0]}
+                </div>
+                <div style={{fontSize:"18px"}}> 
+                Cow Votes: {voteResult[1]}
+                </div>
+                <div style={{fontSize:"18px"}}> 
+                {console.log(voteResult[2])}
+                </div>
               </div>
-              <div style={{fontSize:"18px"}}> 
-              Cow Votes: {voteResult[1]}
-              </div>
+              : "" }
             </div>
-          : "" }
+
+          <div style={{fontSize:"20px", textAlign: "center", padding: 20 }}>
+          {voteResult ?
+            <Card title="Resent Votes">
+              <List
+              itemLayout="horizontal"
+              dataSource={voteResult[2]}
+              renderItem={item => (
+                <List.Item>
+                <Address
+                    address={item.address}
+                    ensProvider={mainnetProvider}
+                    blockExplorer={blockExplorer}
+                    fontSize={20}
+                  /> 
+                  {" "} ----> {<span style={{fontSize:"20px"}}>{item.vote}</span>}
+                </List.Item>
+              )}
+              />
+            </Card>
+            : "" }
+          </div>
+
           </Card>
         </Col>
       </Row>
+      
     </div>
   );
 }

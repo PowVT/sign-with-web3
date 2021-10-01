@@ -25,6 +25,7 @@ let horseVotes = 0;
 let cowVotes = 0;
 
 let voters = [];
+let voteHistory = [];
 
 console.log("HIDDEN_CONTENT",HIDDEN_CONTENT);
 
@@ -43,7 +44,7 @@ app.get("/", function(req, res) {
     res.status(200).send(currentMessageForUseToSign);
 });
 
-// Sign in
+// Sign in & check for GTC balance.
 app.post('/sign-in', async function(request, response){
     const ip = request.headers['x-forwarded-for'] || request.connection.remoteAddress;
     console.log("POST from IP address: ", ip, request.body.message);
@@ -81,10 +82,15 @@ app.post('/cow-vote', function (request, response){
         voters.push(request.body.address);
         cowVotes++;
         console.log("Cow Votes",cowVotes)
-        response.send([horseVotes,cowVotes]);
+        const obj = {};
+        obj["address"] = request.body.address
+        obj["vote"] = "Cow";
+        voteHistory.push(obj);
+        console.log(voteHistory);
+        response.status(200).send([horseVotes,cowVotes, voteHistory]);
     }
     else{
-        response.send([horseVotes,cowVotes]);
+        response.status(200).send([horseVotes,cowVotes, voteHistory]);
     }
     
 })
@@ -96,11 +102,16 @@ app.post('/horse-vote', function (request, response){
     if(voted == false) {
         voters.push(request.body.address);
         horseVotes++;
-        console.log("Horse Votes",horseVotes)
-        response.send([horseVotes,cowVotes]);
+        console.log("Horse Votes",horseVotes);
+        const obj = {};
+        obj["address"] = request.body.address
+        obj["vote"] = "Horse";
+        voteHistory.push(obj);
+        console.log(voteHistory);
+        response.status(200).send([horseVotes,cowVotes, voteHistory]);
     }    
     else {
-        response.send([horseVotes,cowVotes]);
+        response.status(200).send([horseVotes,cowVotes, voteHistory]);
     }
 })
 
