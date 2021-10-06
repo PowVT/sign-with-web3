@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import usePoller from "./Poller";
 
 
@@ -13,26 +13,24 @@ import usePoller from "./Poller";
   - If no pollTime is passed, the balance will update on every new block
 */
 
-let DEBUG = false
+let DEBUG = true
 
-export default function useBalance(provider, address, pollTime = 1000) {
+export default function useBalance(provider, address, pollTime = 3000) {
 
 const [balance, setBalance] = useState();
-
-const pollBalance = useCallback(async (provider, address) => {
-  if (provider && address) {
-    const newBalance = await provider.getBalance(address);
-    if (newBalance !== balance) {
-      setBalance(newBalance);
-    }
-  }
-}, [provider, address]);
 
 // Use a poller if a pollTime is provided
 usePoller(async () => {
   if (provider && address && pollTime > 0) {
-    if (DEBUG) console.log('polling!', address)
-    pollBalance()
+
+    if (DEBUG) {console.log('polling!', address, provider)};
+
+    if (provider && address) {
+      const newBalance = await provider.getBalance(address);
+      if (newBalance !== balance) {
+        setBalance(newBalance);
+      }
+    }
   }
 }, pollTime, provider && address)
 

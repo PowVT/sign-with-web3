@@ -1,27 +1,30 @@
-import React, { useCallback, useState } from "react";
-import { Button, message, Card, Row, Col, Modal, List, Descriptions } from "antd";
+import React, { useCallback, useEffect, useState } from "react";
+import { Button, message, Card, Row, Col, List } from "antd";
 import "antd/dist/antd.css";
 import { StaticJsonRpcProvider, Web3Provider } from "@ethersproject/providers";
 import Web3Modal from "web3modal";
-import { useUserProvider, useExchangePrice } from "./hooks";
+import { useUserProvider, useExchangePrice, useOnBlock } from "./hooks";
 import { Account, Address } from "./components";
 import { useUserAddress } from "eth-hooks";
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { INFURA_ID, NETWORKS } from "./constants";
 import './App.css';
+import ReactHtmlParser from 'react-html-parser';
 
 const axios = require('axios');
 
-const DEBUG = false;
+const DEBUG = true;
 
 const serverUrl = "http://localhost:49832/";
 const targetNetwork = NETWORKS['mainnet'];
 const blockExplorer = targetNetwork.blockExplorer;
 
-const mainnetInfura = new StaticJsonRpcProvider("https://mainnet.infura.io/v3/" + INFURA_ID)
+const mainnetInfura = new StaticJsonRpcProvider("https://mainnet.infura.io/v3/"+INFURA_ID)
+if(DEBUG){console.log("Mainnet Infura:", mainnetInfura)};
 const localProviderUrl = targetNetwork.rpcUrl;
-console.log("🏠 Connecting to provider:", localProviderUrl);
+if(DEBUG){console.log("🏠 Connecting to provider:", localProviderUrl)};
 const localProvider = new StaticJsonRpcProvider(localProviderUrl);
+if(DEBUG){console.log("🏠 Connecting to local provider:", localProvider)};
 
 const web3Modal = new Web3Modal({
   // network: "mainnet", // optional
@@ -43,6 +46,10 @@ const logoutOfWeb3Modal = async () => {
   }, 1);
 };
 
+// Vimeo SDK
+//let Vimeo = require('vimeo').Vimeo;
+//let client = new Vimeo("{5e4b5685a66a84dd1f116c9b460ea0df3537a890}", "{+pBawidMGM1zuWg6m/1bvAO6FwHRR/MDrudqdeJvQ47KhTWMCNimtyS9L0ZGBXXQRzWtQJsbU6evpsHqe/VYH1NwcA5ViiRMm7XpHqoCPckBJRw0AYVo9NrpZge1drOg}", "{b160fd5e91c79503f49861e7bef3f67e}");
+
 function App() {
 
   const [ injectedProvider, setInjectedProvider ] = useState();
@@ -55,7 +62,7 @@ function App() {
   if(DEBUG){console.log("Current address: ", address)};
   const isSigner = injectedProvider && injectedProvider.getSigner && injectedProvider.getSigner()._isSigner
   const price = useExchangePrice(targetNetwork,mainnetProvider);
-  
+  if(DEBUG){console.log("price", price)};
 
   const loadWeb3Modal = useCallback(async () => {
     const provider = await web3Modal.connect();
@@ -101,7 +108,7 @@ function App() {
       </div>
       </Row >
       <Row justify="center" style={{margin:"24px"}}>
-        <Col Span={12}>
+        <Col span={12}>
           
           <Card >
             <div >
@@ -140,13 +147,15 @@ function App() {
                   console.log("FAILED TO GET...");
                 }
               }}>
-                Access Poll
+                Access Video
               </Button>
             </div >
 
             <div style={{fontSize:"24px", padding: 60 }}>
-              {result}
+              {ReactHtmlParser(result)}
             </div>
+
+            {/* Uncomment when want to show poll
             <div style={{display:showPoll}}>
             <Button size="large" shape="round" onClick={showModal}>
               Open Poll
@@ -192,6 +201,7 @@ function App() {
               ) : ("")}
             </Modal>
             </div>
+            */}
 
             <div style={{fontSize:"20px", padding: 20 }}>
               {voteResult ?
@@ -212,7 +222,7 @@ function App() {
 
           <div style={{fontSize:"20px", textAlign: "center", padding: 20 }}>
           {voteResult ?
-            <Card title="Resent Votes">
+            <Card title="Recent Votes">
               <List
               itemLayout="horizontal"
               dataSource={voteResult[2]}

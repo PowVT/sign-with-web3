@@ -3,3 +3,4 @@ export { default as useLookupAddress } from "./LookupAddress";
 export { default as useBalance } from "./Balance";
 export { default as usePoller } from "./Poller";
 export { default as useExchangePrice } from "./ExchangePrice";
+export { default as useOnBlock } from "./OnBlock";
